@@ -1,0 +1,40 @@
+# version: '3.8'
+
+services:
+  # Frontend Service (React)
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"  # Vite default port
+    depends_on:
+      - backend  # Ensure backend is running before frontend starts
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    # Add a simple wait for the backend to be healthy before frontend starts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://backend:5000"]
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  # Backend Service (Flask)
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"  # Flask default port
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+      - MONGO_URI=mongodb://host.docker.internal:20107/ecommerce  # MongoDB URI to local MongoDB
+    networks:
+      - app-network
+
+# Define a network so frontend and backend can communicate
+networks:
+  app-network:
+    driver: bridge
